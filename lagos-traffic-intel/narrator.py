@@ -79,6 +79,8 @@ Scoring inputs (these set the level, they are not things to quote directly):
   ({DAY_CONTEXT.get(ctx['day_of_week'], '')})
 - Weather modifier: +{ctx['weather_modifier']} ({ctx['precip_sum_mm']}mm rainfall over {ctx['precip_hours']} hours since midnight)
 - Signal modifier: +{ctx['signal_modifier']} ({ctx['signal_count']} event(s) found in news/radio)
+- Corridor modifier: {ctx.get('corridor_modifier', 0):+d} (from real corridor report sentiment below; positive
+  means several confirmed incidents, negative means most named corridors are reported clear)
 
 Rainfall context: {ctx['condition_label']}, {ctx['season_label']}
 

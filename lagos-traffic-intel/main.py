@@ -16,7 +16,6 @@ from config import LOG_DIR
 from flood import assess_flood_zones
 from narrator import generate_narrative
 from scorer import full_score
-from scraper import scrape_all
 from signals import (
     corridor_reports_to_text,
     extract_signals,
@@ -54,9 +53,11 @@ async def run_pipeline() -> dict | None:
     logger.info("Pipeline starting — %s", now.isoformat())
 
     # ── 1. Collect all data concurrently ──────────────────────────────────────
-    weather_data, articles, tg_posts = await asyncio.gather(
+    # News scraping (Pulse Nigeria, Vanguard) was dropped 2026-07-06: both were
+    # unreliable (403-blocked / matching the wrong page elements) and Trigify's
+    # corridor reports + keyword search cover real ground truth well on their own.
+    weather_data, tg_posts = await asyncio.gather(
         _safe(fetch_weather, logger, "weather"),
-        _safe(scrape_all,    logger, "scraper"),
         _safe(fetch_trigify_posts, logger, "trigify"),
     )
 
@@ -64,33 +65,34 @@ async def run_pipeline() -> dict | None:
         "precip_sum_mm": 0.0, "precip_hours": 0, "weather_code": 0,
         "condition_label": "Unknown", "season": "dry", "season_label": "Unknown", "month": now.month,
     }
-    articles  = articles  or []
-    tg_posts  = tg_posts  or []
+    tg_posts = tg_posts or []
 
     logger.info(
-        "Collected: weather=%s, articles=%d, tg_posts=%d",
-        weather_data.get("condition_label"), len(articles), len(tg_posts),
+        "Collected: weather=%s, tg_posts=%d",
+        weather_data.get("condition_label"), len(tg_posts),
     )
 
     # ── 2. Extract signals ────────────────────────────────────────────────────
-    signals = extract_signals(articles, tg_posts)
+    signals = extract_signals([], tg_posts)
     corridor_reports = parse_corridor_reports(tg_posts)
     logger.info("Signals found: %d | corridor reports parsed: %d", len(signals), len(corridor_reports))
 
     # ── 3. Score ──────────────────────────────────────────────────────────────
     day_name = now.strftime("%A").lower()
     score_result = full_score(
-        day          = day_name,
-        hour         = now.hour,
-        precip_hours = weather_data["precip_hours"],
-        precip_sum_mm= weather_data["precip_sum_mm"],
-        month        = weather_data["month"],
-        signals      = signals,
+        day              = day_name,
+        hour             = now.hour,
+        precip_hours     = weather_data["precip_hours"],
+        precip_sum_mm    = weather_data["precip_sum_mm"],
+        month            = weather_data["month"],
+        signals          = signals,
+        corridor_reports = corridor_reports,
     )
     logger.info(
-        "Score: %d (%s) | base=%d weather_mod=%d signal_mod=%d",
+        "Score: %d (%s) | base=%d weather_mod=%d signal_mod=%d corridor_mod=%d",
         score_result["final_score"], score_result["level"],
-        score_result["base_score"], score_result["weather_modifier"], score_result["signal_modifier"],
+        score_result["base_score"], score_result["weather_modifier"],
+        score_result["signal_modifier"], score_result["corridor_modifier"],
     )
 
     # ── 4. Flood zones ────────────────────────────────────────────────────────
@@ -114,6 +116,7 @@ async def run_pipeline() -> dict | None:
         "base_score":       score_result["base_score"],
         "weather_modifier": score_result["weather_modifier"],
         "signal_modifier":  score_result["signal_modifier"],
+        "corridor_modifier": score_result["corridor_modifier"],
         "signal_count":     len([s for s in signals if not s.get("error")]),
         "precip_sum_mm":    weather_data["precip_sum_mm"],
         "precip_hours":     weather_data["precip_hours"],
@@ -139,13 +142,10 @@ async def run_pipeline() -> dict | None:
     areas = _build_areas(score_result["level"], signals, flood_zones, corridor_reports)
 
     # ── 7. Assemble today.json ────────────────────────────────────────────────
-    sources_attempted = ["open_meteo", "pulse_nigeria", "vanguard", "trigify_keywords", "trigify_lagostraffic961"]
+    sources_attempted = ["open_meteo", "trigify_keywords", "trigify_lagostraffic961"]
     sources_succeeded = []
     if weather_data.get("condition_label") != "Unknown":
         sources_succeeded.append("open_meteo")
-    for a in articles:
-        if not a.get("error") and a["source"] not in sources_succeeded:
-            sources_succeeded.append(a["source"])
     for p in tg_posts:
         if not p.get("error"):
             for sid in ("trigify_keywords", "trigify_lagostraffic961"):
@@ -165,11 +165,13 @@ async def run_pipeline() -> dict | None:
             "narrative": narrative,
         },
         "scoring_breakdown": {
-            "base_score":       score_result["base_score"],
-            "weather_modifier": score_result["weather_modifier"],
-            "signal_modifier":  score_result["signal_modifier"],
-            "final_score":      score_result["final_score"],
-            "capped_at_10":     score_result.get("capped_at_10", False),
+            "base_score":        score_result["base_score"],
+            "weather_modifier":  score_result["weather_modifier"],
+            "signal_modifier":   score_result["signal_modifier"],
+            "corridor_modifier": score_result["corridor_modifier"],
+            "final_score":       score_result["final_score"],
+            "capped_at_10":      score_result.get("capped_at_10", False),
+            "capped_at_1":       score_result.get("capped_at_1", False),
         },
         "areas_to_watch": areas,
         "weather": {

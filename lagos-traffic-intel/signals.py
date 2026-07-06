@@ -37,8 +37,11 @@ SIGNAL_PATTERNS: list[tuple[re.Pattern, str, str, str]] = [
 
 def extract_signals(articles: list[dict], posts: list[dict]) -> list[dict]:
     """
-    Combines articles (from scraper) and posts (from Trigify) into one text corpus,
-    runs pattern matching, deduplicates by event type, returns signal list.
+    Combines articles (always empty now — news scraping was dropped 2026-07-06,
+    see main.py) and posts (from Trigify) into one text corpus, runs pattern
+    matching, deduplicates by event type, returns signal list. Kept accepting
+    `articles` so the signature doesn't need to change if a news source is
+    ever added back.
     """
     signals: list[dict] = []
     seen_types: set[str] = set()

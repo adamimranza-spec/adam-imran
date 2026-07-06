@@ -3,145 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Daily Lagos traffic intelligence. Updated 5:45 AM every morning.">
-  <meta name="theme-color" content="#0D0B09" id="theme-color-meta">
+  <meta name="description" content="Daily Lagos traffic intelligence. Updated 5:45 AM and 4:00 PM every day.">
+  <meta name="theme-color" content="#FFFFFF">
   <meta property="og:title" content="Lagos Traffic Intel">
   <meta property="og:description" content="Is it worth leaving now?">
   <meta property="og:type" content="website">
   <title>Lagos Traffic Intel</title>
 
   <style>
-    /* Subset Bungee (OFL) to only the glyphs the status word + tagline need.
-       ~2kb woff2, embedded so the display face never costs a network request. */
+    /* Subset Space Grotesk Bold (OFL) to latin letters + space + question mark.
+       ~3.4kb woff2, embedded so the display face never costs a network request. */
     @font-face {
-      font-family: 'BungeeSubset';
+      font-family: 'DisplaySubset';
       font-style: normal;
-      font-weight: 400;
+      font-weight: 700;
       font-display: swap;
-      src: url(data:font/woff2;base64,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) format('woff2');
-      unicode-range: U+0020,U+003F,U+0041-005A,U+0061,U+0065,U+0067-0069,U+006C,U+006E-006F,U+0072-0074,U+0076-0077;
+      src: url(data:font/woff2;base64,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) format('woff2');
+      unicode-range: U+0020,U+003F,U+0041-005A,U+0061-007A;
     }
 
-    /* Design tokens: Lagos, 5:45am, pre-dawn (night = default) */
+    /* Design tokens: light, vibrant, one saturated green (Bolt/Moniepoint/Opay
+       fintech-clean territory). Built for 9-5 commuters age 21-39 checking
+       this on the way out the door, not a late-night poster. */
     :root {
-      --ground:         #0D0B09;
-      --ground-raised:  #18140F;
-      --ground-line:    #241E16;
-      --amber:          #F5A623;
-      --amber-dim:      #C9860F;
-      --amber-line:     rgba(245, 166, 35, 0.14);
-      --amber-line-soft:rgba(245, 166, 35, 0.06);
-      --text:           #F5EFE2;
-      --text-muted:     #A89C89;
-      --text-faint:     #6E6355;
-      --border:         rgba(245, 166, 35, 0.16);
-      --accent:         var(--amber);
-      --glass:          #171E26;
-      --flood-border:   rgba(230, 96, 60, 0.4);
-      --flood-text:     #F0B69A;
-      --stale-border:   rgba(230, 96, 60, 0.3);
-      --font-serif:     Georgia, 'Times New Roman', serif;
-      --font-sans:      system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      --current-level-color: var(--amber);
-      /* The hero plate (status word + vehicles) always stays this dark tone,
-         day or night: it's a status readout, not page chrome. */
-      --hero-ground:    #0D0B09;
-      --hero-raised:    #18140F;
-    }
-
-    /* Day mode: bright Lagos midday paper for the page chrome. The hero
-       plate keeps its own fixed dark tokens above so the status readout
-       never loses contrast, whichever mode the page is in. */
-    :root[data-mode="day"] {
-      --ground:         #F5EEDC;
-      --ground-raised:  #EBE1C6;
-      --ground-line:    #DBCCA3;
-      --amber-line:     rgba(159, 106, 15, 0.16);
-      --amber-line-soft:rgba(159, 106, 15, 0.08);
-      --text:           #241C12;
-      --text-muted:     #675838;
-      --text-faint:     #948357;
-      --border:         rgba(159, 106, 15, 0.3);
-      --accent:         #9A6A0F;
-      --flood-border:   rgba(180, 66, 40, 0.35);
-      --flood-text:     #7A3220;
-      --stale-border:   rgba(180, 66, 40, 0.3);
+      --bg:            #FFFFFF;
+      --surface:       #F4F8F5;
+      --border:        #E3E9E4;
+      --border-strong: #D3DCD5;
+      --text:          #101613;
+      --text-muted:    #5B6A60;
+      --text-faint:    #8A9790;
+      --green:         #0CAF60;
+      --green-dim:     #0A9752;
+      --green-tint:    rgba(12, 175, 96, 0.10);
+      --green-tint-soft: rgba(12, 175, 96, 0.06);
+      --flood-bg:      #FFF6EC;
+      --flood-border:  #F0B673;
+      --flood-text:    #92400E;
+      --stale-border:  #F0B673;
+      --font-sans:     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-display:  'DisplaySubset', var(--font-sans);
+      --current-level-color: var(--green);
+      --radius: 18px;
     }
 
     /* Reset */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-size: 16px; -webkit-text-size-adjust: 100%; }
     body {
-      background: var(--ground);
+      background: var(--bg);
       color: var(--text);
       font-family: var(--font-sans);
       line-height: 1.5;
       min-height: 100dvh;
-      overflow-x: hidden;
     }
-    a { color: var(--accent); text-decoration: none; }
+    a { color: var(--green-dim); text-decoration: none; }
     a:hover { text-decoration: underline; }
     button { cursor: pointer; border: none; background: none; font: inherit; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition: none !important; animation: none !important; }
     }
 
-    /* Faux map: fixed road-grid background layer */
-    .map-layer {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      pointer-events: none;
-    }
-    .map-layer svg { width: 100%; height: 100%; }
-    .map-grid { stroke: var(--amber-line-soft); stroke-width: 1; }
-    .map-road {
-      stroke: var(--amber-line);
-      stroke-width: 1.6;
-      fill: none;
-      stroke-dasharray: 3 9;
-      animation: roadFlow 26s linear infinite;
-    }
-    @keyframes roadFlow { to { stroke-dashoffset: -240; } }
-
-    /* Film grain: fixed, non-scrolling, pointer-events-none. Keeps the dark
-       ground from reading as a flat CSS gradient. */
-    .grain {
-      position: fixed;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-      opacity: 0.05;
-      mix-blend-mode: overlay;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    }
-
     /* Page shell */
     .page {
-      position: relative;
-      z-index: 1;
       max-width: 460px;
       margin: 0 auto;
-      padding: 0 24px 48px;
+      padding: 0 20px 48px;
     }
     /* Below the split breakpoint, these wrappers stay invisible to layout
        so the mobile document order/spacing is untouched. */
     .layout, .identity-col, .content-col { display: contents; }
 
     /* Header */
-    .site-header {
-      padding: 22px 0 20px;
-      border-bottom: 1px solid var(--ground-line);
-    }
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
+    .site-header { padding: 22px 0 4px; }
     .wordmark { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .mark { flex-shrink: 0; display: block; }
     .site-name {
@@ -151,156 +85,116 @@
       text-transform: uppercase;
       color: var(--text-muted);
     }
-    .mode-toggle {
-      flex-shrink: 0;
+    .site-headline {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.375rem, 5.5vw, 1.75rem);
+      line-height: 1.25;
+      color: var(--text);
+      margin-top: 12px;
+    }
+
+    /* Hero card: full color fill, rounded, elevated above the white page */
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      margin-top: 20px;
+      border-radius: var(--radius);
+      padding: 26px 22px 0;
+      background: var(--current-level-color);
+      transition: background 0.5s ease;
+      box-shadow: 0 12px 28px -12px color-mix(in srgb, var(--current-level-color) 45%, transparent);
+    }
+    .eyebrow-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      color: var(--text-muted);
-      transition: color 0.15s, background 0.15s;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.75);
     }
-    .mode-toggle:hover { color: var(--text); background: var(--amber-line-soft); }
-    .mode-toggle svg { display: none; }
-    :root:not([data-mode="day"]) .mode-toggle .icon-sun { display: block; }
-    :root[data-mode="day"] .mode-toggle .icon-moon { display: block; }
-
-    .site-headline {
-      font-family: 'BungeeSubset', var(--font-sans);
-      font-weight: 400;
-      font-size: clamp(1.375rem, 5.5vw, 1.75rem);
-      line-height: 1.2;
-      color: var(--text);
-      margin-top: 14px;
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #fff;
+      animation: pulseDot 2s ease-in-out infinite;
     }
-
-    /* Hero / status */
-    .hero-wrap { margin: 0 -24px; background: var(--hero-ground); }
-    .hero {
-      position: relative;
-      overflow: hidden;
-      padding: 34px 24px 0;
-      isolation: isolate;
-      color: #F5EFE2;
-    }
-    .hero-glow {
-      position: absolute;
-      inset: -30% -20% auto -20%;
-      height: 130%;
-      background: radial-gradient(ellipse at 50% 0%, var(--current-level-color), transparent 65%);
-      opacity: 0.3;
-      filter: blur(6px);
-      transition: background 0.6s ease;
-      animation: glowPulse 4.5s ease-in-out infinite;
-      z-index: -1;
-    }
-    @keyframes glowPulse { 0%, 100% { opacity: 0.22; } 50% { opacity: 0.36; } }
+    @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
     .badge-level {
-      font-family: 'BungeeSubset', var(--font-sans);
-      font-size: clamp(3rem, 17vw, 6.25rem);
-      font-weight: 400;
-      color: var(--current-level-color);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(2.75rem, 15vw, 5.25rem);
+      color: #FFFFFF;
       line-height: 1;
       letter-spacing: -0.01em;
-      margin-top: 0;
+      margin-top: 10px;
       white-space: nowrap;
-      text-shadow: 0 0 44px color-mix(in srgb, var(--current-level-color) 55%, transparent);
-      transition: color 0.6s ease, text-shadow 0.6s ease;
-      animation: badgeIn 0.7s cubic-bezier(.2,.7,.3,1) both;
+      animation: badgeIn 0.6s cubic-bezier(.2,.7,.3,1) both;
     }
-    @keyframes badgeIn { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes badgeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     .badge-score {
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       font-weight: 600;
-      color: #A89C89;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-top: 8px;
+      color: rgba(255,255,255,0.8);
+      letter-spacing: 0.03em;
+      margin-top: 6px;
     }
-    .badge-score b { color: #F5EFE2; font-weight: 700; }
+    .badge-score b { color: #fff; font-weight: 700; }
 
-    /* Road strip + vehicles */
+    /* Road strip + vehicles: dark scrim at the base of the card so the
+       vehicles read consistently regardless of which level color is behind them */
     .road-strip {
       position: relative;
-      height: 96px;
-      margin-top: 22px;
+      height: 88px;
+      margin-top: 20px;
       overflow: hidden;
+      background: rgba(0,0,0,0.14);
     }
     .road-strip::after {
       content: '';
       position: absolute;
-      left: 0; right: 0; bottom: 22px;
+      left: 0; right: 0; bottom: 20px;
       height: 2px;
-      background: repeating-linear-gradient(90deg, var(--amber-dim) 0 10px, transparent 10px 20px);
-      opacity: 0.5;
+      background: repeating-linear-gradient(90deg, rgba(255,255,255,0.55) 0 10px, transparent 10px 20px);
     }
     .vehicle { position: absolute; will-change: transform; }
     .vehicle svg { display: block; }
-    .sedan {
-      top: 4px;
-      width: 92px;
-      animation: driveLeft 17s linear infinite;
-    }
-    .bus {
-      bottom: 8px;
-      width: 148px;
-      z-index: 1;
-      animation: driveRight 13s linear infinite;
-    }
-    @keyframes driveRight {
-      from { transform: translateX(-40%); }
-      to   { transform: translateX(340%); }
-    }
-    @keyframes driveLeft {
-      from { transform: translateX(340%) scaleX(-1); }
-      to   { transform: translateX(-40%) scaleX(-1); }
-    }
+    .sedan { top: 2px; width: 84px; animation: driveLeft 17s linear infinite; }
+    .bus   { bottom: 6px; width: 136px; z-index: 1; animation: driveRight 13s linear infinite; }
+    @keyframes driveRight { from { transform: translateX(-40%); } to { transform: translateX(340%); } }
+    @keyframes driveLeft  { from { transform: translateX(340%) scaleX(-1); } to { transform: translateX(-40%) scaleX(-1); } }
 
     /* Date row */
     .date-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 0;
-      margin-top: 6px;
-      border-top: 1px solid var(--ground-line);
-      border-bottom: 1px solid var(--ground-line);
+      padding: 16px 2px;
       gap: 8px;
     }
-    .date-label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: 0.02em;
-    }
-    .updated-time {
-      font-size: 0.75rem;
-      color: var(--text-faint);
-      white-space: nowrap;
-    }
+    .date-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); }
+    .updated-time { font-size: 0.75rem; color: var(--text-faint); white-space: nowrap; }
 
     /* Stale warning */
     .stale-notice {
-      background: var(--ground-raised);
+      background: var(--flood-bg);
       border: 1px solid var(--stale-border);
-      border-radius: 6px;
+      border-radius: 12px;
       padding: 10px 14px;
       font-size: 0.8125rem;
-      color: var(--text-muted);
-      margin-top: 16px;
+      color: var(--flood-text);
+      margin-top: 4px;
       display: none;
     }
     .stale-notice.visible { display: block; }
 
     /* Narrative */
-    .narrative { padding: 22px 0 0; }
+    .narrative { padding: 18px 0 0; }
     .narrative p {
-      font-family: var(--font-serif);
-      font-size: 1.0625rem;
-      line-height: 1.75;
+      font-size: 1rem;
+      line-height: 1.65;
       color: var(--text);
       text-wrap: pretty;
       white-space: pre-line;
@@ -308,47 +202,48 @@
 
     /* Section heading */
     .section-label {
-      font-size: 1.0625rem;
-      font-weight: 800;
+      font-size: 1rem;
+      font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     /* Areas to watch */
-    .areas { padding-top: 26px; }
-    .area-list { list-style: none; display: flex; flex-direction: column; }
+    .areas { padding-top: 24px; }
+    .area-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
     .area-item {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 12px 0;
-      border-left: 2px solid var(--current-level-color);
-      padding-left: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border-left: 3px solid var(--current-level-color);
+      background: var(--surface);
       font-size: 0.9375rem;
       color: var(--text);
-      border-bottom: 1px solid var(--ground-line);
-      transition: border-color 0.6s ease;
+      transition: border-color 0.5s ease;
     }
-    .area-item:last-child { border-bottom: none; }
-    .area-item svg { flex-shrink: 0; opacity: 0.55; }
+    .area-item svg { flex-shrink: 0; opacity: 0.5; }
 
     /* Flood advisory */
     .flood-advisory {
-      background: var(--ground-raised);
+      background: var(--flood-bg);
       border: 1px solid var(--flood-border);
-      border-radius: 6px;
+      border-radius: var(--radius);
       padding: 14px 16px;
-      margin-top: 24px;
+      margin-top: 22px;
       display: none;
     }
     .flood-advisory.visible { display: block; }
     .flood-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
     .flood-icon { color: var(--flood-text); flex-shrink: 0; }
-    .flood-title {
-      font-size: 1.0625rem; font-weight: 800; letter-spacing: -0.01em;
-      color: var(--flood-text);
-    }
+    .flood-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; color: var(--flood-text); }
     .flood-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
     .flood-item {
       font-size: 0.875rem; color: var(--flood-text);
@@ -360,7 +255,7 @@
     }
 
     /* Subscribe + social section */
-    .sub-section { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--ground-line); }
+    .sub-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
     .sub-count {
       font-size: 0.8125rem; color: var(--text-muted); text-align: center;
       margin-bottom: 14px; min-height: 1.25rem;
@@ -368,55 +263,53 @@
     .sub-count span { font-weight: 700; color: var(--text); }
     .btn-row { display: flex; flex-direction: column; gap: 10px; }
     .btn {
-      display: block; width: 100%; padding: 14px 20px; border-radius: 6px;
+      display: block; width: 100%; padding: 14px 20px; border-radius: 999px;
       font-size: 0.9375rem; font-weight: 700; text-align: center;
       transition: opacity 0.15s, transform 0.1s, background 0.15s;
     }
     .btn:active { transform: scale(0.985); }
-    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .btn:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
     .btn-share {
-      background: transparent; color: var(--accent);
-      border: 1px solid var(--border);
+      background: var(--green-tint); color: var(--green-dim);
+      border: 1px solid var(--green-tint);
     }
-    .btn-share:hover { background: var(--amber-line-soft); }
+    .btn-share:hover { background: var(--green-tint-soft); border-color: var(--green); }
     .btn-telegram { background: #0088CC; color: #FFFFFF; }
     .btn-telegram:hover { background: #007AB8; }
     .btn-share-icon, .btn-tg-icon { display: inline-block; margin-right: 6px; vertical-align: -1px; }
 
     /* Footer */
     .site-footer {
-      margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--ground-line);
+      margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--border);
       font-size: 0.75rem; color: var(--text-faint);
       display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
     }
     .footer-left { line-height: 1.6; }
     .api-link { font-size: 0.6875rem; letter-spacing: 0.05em; font-weight: 600; color: var(--text-faint); }
-    .api-link:hover { color: var(--accent); }
+    .api-link:hover { color: var(--green-dim); }
 
     /* Loading shimmer */
-    @keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 0.9; } 100% { opacity: 0.4; } }
+    @keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 0.85; } 100% { opacity: 0.4; } }
     .loading { animation: shimmer 1.4s ease-in-out infinite; }
 
     @media (min-width: 600px) {
-      .page { padding-top: 32px; }
-      .hero-wrap { border-radius: 10px; overflow: hidden; margin: 0 0; background: var(--hero-raised); }
+      .page { padding-top: 28px; }
     }
 
     /* Wide viewports get a real asymmetric split, not a centered mobile card:
        the identity (wordmark + status) pins to a narrow left column while
        the report scrolls in a wider right column. */
     @media (min-width: 960px) {
-      .page { max-width: 1180px; padding: 56px 48px 72px; }
+      .page { max-width: 1180px; padding: 48px 48px 72px; }
       .layout {
         display: grid;
         grid-template-columns: minmax(340px, 400px) 1fr;
-        gap: 72px;
+        gap: 64px;
         align-items: start;
       }
       .identity-col, .content-col { display: block; }
-      .identity-col { position: sticky; top: 56px; }
+      .identity-col { position: sticky; top: 48px; }
       .content-col { padding-top: 4px; }
-      .hero-wrap { margin: 0; }
       .site-header { padding-top: 0; }
       .narrative p { max-width: 58ch; }
       .sub-section { max-width: 420px; }
@@ -425,120 +318,94 @@
 </head>
 <body>
 
-  <div class="map-layer" aria-hidden="true">
-    <svg viewBox="0 0 400 900" preserveAspectRatio="xMidYMid slice">
-      <g class="map-grid">
-        <path d="M40 0V900 M120 0V900 M200 0V900 M280 0V900 M360 0V900" />
-        <path d="M0 80H400 M0 200H400 M0 320H400 M0 440H400 M0 560H400 M0 680H400 M0 800H400" />
-      </g>
-      <g class="map-road">
-        <path d="M-20 640 C 120 560, 260 480, 420 260" />
-        <path d="M60 -20 C 100 220, 40 460, 90 920" />
-        <path d="M-20 120 C 160 150, 300 110, 420 170" />
-        <path d="M-20 760 C 140 700, 280 780, 420 700" />
-      </g>
-    </svg>
-  </div>
-  <div class="grain" aria-hidden="true"></div>
-
   <main class="page" role="main">
    <div class="layout">
     <div class="identity-col">
 
     <header class="site-header">
-      <div class="header-top">
-        <div class="wordmark">
-          <svg class="mark" width="26" height="26" viewBox="0 0 30 30" aria-hidden="true">
-            <rect x="2" y="9" width="26" height="14" rx="3" fill="#F5A623"/>
-            <rect x="6" y="12" width="18" height="5" rx="1" fill="#171E26"/>
-            <rect x="2" y="20" width="26" height="2.5" fill="#14110D"/>
-            <circle cx="9" cy="24" r="3.4" fill="#14110D"/>
-            <circle cx="21" cy="24" r="3.4" fill="#14110D"/>
-            <circle cx="9" cy="24" r="1.3" fill="#4A443A"/>
-            <circle cx="21" cy="24" r="1.3" fill="#4A443A"/>
-          </svg>
-          <span class="site-name">Lagos Traffic Intel</span>
-        </div>
-        <button class="mode-toggle" onclick="toggleMode()" aria-label="Toggle day/night mode">
-          <svg class="icon-sun" width="17" height="17" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <circle cx="10" cy="10" r="4.2" fill="currentColor"/>
-            <path d="M10 1.5v2.4M10 16.1v2.4M18.5 10h-2.4M3.9 10H1.5M15.9 4.1l-1.7 1.7M5.8 14.2l-1.7 1.7M15.9 15.9l-1.7-1.7M5.8 5.8 4.1 4.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-          </svg>
-          <svg class="icon-moon" width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M17.5 12.3A7.8 7.8 0 1 1 7.7 2.5a6.4 6.4 0 0 0 9.8 9.8Z" fill="currentColor"/>
-          </svg>
-        </button>
+      <div class="wordmark">
+        <svg class="mark" width="26" height="26" viewBox="0 0 30 30" aria-hidden="true">
+          <rect x="2" y="9" width="26" height="14" rx="3" fill="#0CAF60"/>
+          <rect x="6" y="12" width="18" height="5" rx="1" fill="#EAFBF1"/>
+          <rect x="2" y="20" width="26" height="2.5" fill="#0A9752"/>
+          <circle cx="9" cy="24" r="3.4" fill="#101613"/>
+          <circle cx="21" cy="24" r="3.4" fill="#101613"/>
+          <circle cx="9" cy="24" r="1.3" fill="#5B6A60"/>
+          <circle cx="21" cy="24" r="1.3" fill="#5B6A60"/>
+        </svg>
+        <span class="site-name">Lagos Traffic Intel</span>
       </div>
       <h1 class="site-headline">Is it worth leaving now?</h1>
     </header>
 
-    <div class="hero-wrap">
-      <div class="hero">
-        <div class="hero-glow" aria-hidden="true"></div>
+    <div class="hero-card" id="hero-card">
+      <div class="eyebrow-row">
+        <span class="live-dot" aria-hidden="true"></span>
+        Live traffic status
+      </div>
 
-        <div class="badge-level" id="badge-level" role="status" aria-live="polite">SEVERE</div>
-        <div class="badge-score" id="badge-score"><b>9</b> / 10</div>
+      <div class="badge-level" id="badge-level" role="status" aria-live="polite">SEVERE</div>
+      <div class="badge-score" id="badge-score"><b>9</b> / 10</div>
 
-        <div class="road-strip" aria-hidden="true">
-          <div class="vehicle sedan">
-            <svg viewBox="0 0 220 90" width="92" height="38">
-              <ellipse cx="105" cy="80" rx="95" ry="4" fill="#000" opacity="0.35"/>
-              <path d="M8 58 Q6 46 20 45 L52 45 C60 21 148 20 156 45 L198 45 C210 46 212 54 210 60 L210 68 Q210 75 202 75 L16 75 Q8 75 8 68 Z" fill="#241F19"/>
-              <path d="M14 58 Q13 50 22 49 L50 49 L46 58 Z" fill="#1A1611"/>
-              <path d="M62 43 C 70 28, 140 28, 148 43 L142 43 C 136 32, 74 32, 68 43 Z" fill="#14110D"/>
-              <path d="M68 43 C 74 30, 136 30, 142 43 L138 43 C133 33, 77 33, 72 43 Z" fill="#1B222B"/>
-              <path d="M72 41 C 90 33, 118 33, 136 41" stroke="#3A4552" stroke-width="1.5" fill="none" opacity="0.6"/>
-              <rect x="8" y="65" width="70" height="3" fill="#12100C" opacity="0.5"/>
-              <circle cx="55" cy="78" r="15" fill="#0A0908"/>
-              <circle cx="163" cy="78" r="15" fill="#0A0908"/>
-              <circle cx="55" cy="78" r="12.5" fill="#1A1712"/>
-              <circle cx="163" cy="78" r="12.5" fill="#1A1712"/>
-              <circle cx="55" cy="78" r="5" fill="#57503f"/>
-              <circle cx="163" cy="78" r="5" fill="#57503f"/>
-              <circle cx="13" cy="59" r="4.5" fill="#F5C065"/>
-              <rect x="205" y="53" width="6" height="5" rx="1" fill="#9C3A2C"/>
-              <rect x="46" y="38" width="7" height="3" rx="1" fill="#1A1611" transform="rotate(-18 46 38)"/>
-            </svg>
-          </div>
-          <div class="vehicle bus">
-            <svg viewBox="0 0 320 150" width="148" height="70">
-              <ellipse cx="150" cy="132" rx="150" ry="6" fill="#000" opacity="0.4"/>
+      <div class="road-strip" aria-hidden="true">
+        <div class="vehicle sedan">
+          <svg viewBox="0 0 220 90" width="84" height="34">
+            <ellipse cx="105" cy="80" rx="95" ry="4" fill="#000" opacity="0.35"/>
+            <path d="M8 58 Q6 46 20 45 L52 45 C60 21 148 20 156 45 L198 45 C210 46 212 54 210 60 L210 68 Q210 75 202 75 L16 75 Q8 75 8 68 Z" fill="#241F19"/>
+            <path d="M14 58 Q13 50 22 49 L50 49 L46 58 Z" fill="#1A1611"/>
+            <path d="M62 43 C 70 28, 140 28, 148 43 L142 43 C 136 32, 74 32, 68 43 Z" fill="#14110D"/>
+            <path d="M68 43 C 74 30, 136 30, 142 43 L138 43 C133 33, 77 33, 72 43 Z" fill="#1B222B"/>
+            <path d="M72 41 C 90 33, 118 33, 136 41" stroke="#3A4552" stroke-width="1.5" fill="none" opacity="0.6"/>
+            <rect x="8" y="65" width="70" height="3" fill="#12100C" opacity="0.5"/>
+            <circle cx="55" cy="78" r="15" fill="#0A0908"/>
+            <circle cx="163" cy="78" r="15" fill="#0A0908"/>
+            <circle cx="55" cy="78" r="12.5" fill="#1A1712"/>
+            <circle cx="163" cy="78" r="12.5" fill="#1A1712"/>
+            <circle cx="55" cy="78" r="5" fill="#57503f"/>
+            <circle cx="163" cy="78" r="5" fill="#57503f"/>
+            <circle cx="13" cy="59" r="4.5" fill="#F5C065"/>
+            <rect x="205" y="53" width="6" height="5" rx="1" fill="#9C3A2C"/>
+            <rect x="46" y="38" width="7" height="3" rx="1" fill="#1A1611" transform="rotate(-18 46 38)"/>
+          </svg>
+        </div>
+        <div class="vehicle bus">
+          <svg viewBox="0 0 320 150" width="136" height="64">
+            <ellipse cx="150" cy="132" rx="150" ry="6" fill="#000" opacity="0.4"/>
 
-              <rect x="8" y="35" width="280" height="75" rx="14" fill="#F5A623"/>
-              <path d="M262 35 H288 A14 14 0 0 1 288 71 H262 Z" fill="#F5A623"/>
-              <rect x="8" y="35" width="280" height="16" rx="8" fill="#FFC968" opacity="0.55"/>
-              <path d="M8 92 H288" stroke="#C9860F" stroke-width="2" opacity="0.5"/>
-              <ellipse cx="205" cy="80" rx="26" ry="14" fill="#D88A18" opacity="0.4"/>
-              <ellipse cx="48" cy="98" rx="16" ry="7" fill="#00000022"/>
+            <rect x="8" y="35" width="280" height="75" rx="14" fill="#F5A623"/>
+            <path d="M262 35 H288 A14 14 0 0 1 288 71 H262 Z" fill="#F5A623"/>
+            <rect x="8" y="35" width="280" height="16" rx="8" fill="#FFC968" opacity="0.55"/>
+            <path d="M8 92 H288" stroke="#C9860F" stroke-width="2" opacity="0.5"/>
+            <ellipse cx="205" cy="80" rx="26" ry="14" fill="#D88A18" opacity="0.4"/>
+            <ellipse cx="48" cy="98" rx="16" ry="7" fill="#00000022"/>
 
-              <rect x="66" y="48" width="196" height="28" rx="4" fill="#12181F"/>
-              <rect x="70" y="51" width="188" height="10" fill="#28323D" opacity="0.65"/>
-              <rect x="130" y="48" width="3" height="28" fill="#C9860F"/>
-              <rect x="192" y="48" width="3" height="28" fill="#C9860F"/>
+            <rect x="66" y="48" width="196" height="28" rx="4" fill="#12181F"/>
+            <rect x="70" y="51" width="188" height="10" fill="#28323D" opacity="0.65"/>
+            <rect x="130" y="48" width="3" height="28" fill="#C9860F"/>
+            <rect x="192" y="48" width="3" height="28" fill="#C9860F"/>
 
-              <rect x="8" y="88" width="280" height="10" fill="#14110D"/>
-              <rect x="8" y="88" width="280" height="3" fill="#000" opacity="0.3"/>
+            <rect x="8" y="88" width="280" height="10" fill="#14110D"/>
+            <rect x="8" y="88" width="280" height="3" fill="#000" opacity="0.3"/>
 
-              <rect x="14" y="50" width="42" height="17" rx="2" fill="#F5EFE2"/>
-              <text x="35" y="62" font-family="'BungeeSubset', system-ui, sans-serif" font-size="9" fill="#14110D" text-anchor="middle">OSHODI</text>
+            <rect x="14" y="50" width="42" height="17" rx="2" fill="#F5EFE2"/>
+            <text x="35" y="62" font-family="'DisplaySubset', system-ui, sans-serif" font-size="9" fill="#14110D" text-anchor="middle">OSHODI</text>
 
-              <rect x="238" y="82" width="24" height="15" rx="2" fill="#EADFC4" stroke="#8a7a4f" stroke-width="0.8" transform="rotate(-2 250 89)"/>
-              <text x="250" y="93" font-family="'BungeeSubset', system-ui, sans-serif" font-size="8" fill="#7a3a20" text-anchor="middle" transform="rotate(-2 250 89)">96</text>
+            <rect x="238" y="82" width="24" height="15" rx="2" fill="#EADFC4" stroke="#8a7a4f" stroke-width="0.8" transform="rotate(-2 250 89)"/>
+            <text x="250" y="93" font-family="system-ui, sans-serif" font-size="8" fill="#7a3a20" text-anchor="middle" transform="rotate(-2 250 89)">96</text>
 
-              <circle cx="70" cy="118" r="20" fill="#0A0908"/>
-              <circle cx="230" cy="118" r="20" fill="#0A0908"/>
-              <circle cx="70" cy="118" r="16" fill="#1A1712"/>
-              <circle cx="230" cy="118" r="16" fill="#1A1712"/>
-              <circle cx="70" cy="118" r="8" fill="#57503f"/>
-              <circle cx="230" cy="118" r="7" fill="#8a6a2f"/>
+            <circle cx="70" cy="118" r="20" fill="#0A0908"/>
+            <circle cx="230" cy="118" r="20" fill="#0A0908"/>
+            <circle cx="70" cy="118" r="16" fill="#1A1712"/>
+            <circle cx="230" cy="118" r="16" fill="#1A1712"/>
+            <circle cx="70" cy="118" r="8" fill="#57503f"/>
+            <circle cx="230" cy="118" r="7" fill="#8a6a2f"/>
 
-              <rect x="2" y="52" width="8" height="10" rx="2" fill="#171E26"/>
-              <circle cx="278" cy="100" r="6" fill="#FFF7D6"/>
-              <rect x="12" y="96" width="8" height="6" rx="1" fill="#7A2A22"/>
-              <circle cx="4" cy="88" r="3.5" fill="#9aa0a6" opacity="0.35"/>
-              <circle cx="-2" cy="82" r="2.5" fill="#9aa0a6" opacity="0.25"/>
-            </svg>
-          </div>
+            <rect x="2" y="52" width="8" height="10" rx="2" fill="#171E26"/>
+            <circle cx="278" cy="100" r="6" fill="#FFF7D6"/>
+            <rect x="12" y="96" width="8" height="6" rx="1" fill="#7A2A22"/>
+            <circle cx="4" cy="88" r="3.5" fill="#9aa0a6" opacity="0.35"/>
+            <circle cx="-2" cy="82" r="2.5" fill="#9aa0a6" opacity="0.25"/>
+          </svg>
         </div>
       </div>
     </div>
@@ -600,7 +467,7 @@
 
     <footer class="site-footer">
       <div class="footer-left">
-        Lagos Traffic Intel &nbsp;·&nbsp; Updated 5:45 AM daily
+        Lagos Traffic Intel &nbsp;·&nbsp; Updated 5:45 AM &amp; 4:00 PM daily
       </div>
       <a class="api-link" href="/api/today" target="_blank" rel="noopener">API ↗</a>
     </footer>
@@ -612,11 +479,11 @@
   <script>
     // Level config
     const LEVELS = {
-      Light:    { color: '#3FBF6B' },
+      Light:    { color: '#0CAF60' },
       Moderate: { color: '#F5A623' },
-      Heavy:    { color: '#F2793D' },
-      Severe:   { color: '#E8432E' },
-      Gridlock: { color: '#B91C2C' },
+      Heavy:    { color: '#FF7A1A' },
+      Severe:   { color: '#E63946' },
+      Gridlock: { color: '#9F1C2C' },
     };
 
     // Demo fallback (shown when API is unreachable)
@@ -624,7 +491,7 @@
       traffic: {
         level: 'Severe',
         score: 9,
-        hex_color: '#E8432E',
+        hex_color: '#E63946',
         narrative: 'Expect a difficult Monday morning across Lagos. The overnight rain has saturated drains along all major corridors: Third Mainland Bridge, Lekki-Epe Expressway, and Oshodi-Apapa Expressway will all see heavy delays. Leave at least 30 minutes earlier than usual, or wait until mid-morning.'
       },
       date_label: 'Monday, July 7',
@@ -660,8 +527,8 @@
     let lastBadgeText = '';
     function fitBadgeText() {
       const badge = $('badge-level');
-      const available = badge.parentElement.clientWidth - 48; // hero's 24px l/r padding
-      let lo = 32, hi = 140;
+      const available = badge.parentElement.clientWidth - 44; // hero card's l/r padding
+      let lo = 28, hi = 130;
       for (let i = 0; i < 10; i++) {
         const mid = (lo + hi) / 2;
         badge.style.fontSize = mid + 'px';
@@ -796,23 +663,7 @@
       } catch(_) {}
     }
 
-    // Day/night mode
-    function applyMode(mode) {
-      document.documentElement.setAttribute('data-mode', mode);
-      localStorage.setItem('lti_mode', mode);
-      $('theme-color-meta') && ($('theme-color-meta').content = mode === 'day' ? '#F5EEDC' : '#0D0B09');
-    }
-    function toggleMode() {
-      const current = document.documentElement.getAttribute('data-mode') === 'day' ? 'day' : 'night';
-      applyMode(current === 'day' ? 'night' : 'day');
-    }
-    function initMode() {
-      const saved = localStorage.getItem('lti_mode');
-      applyMode(saved === 'day' ? 'day' : 'night');
-    }
-
     // Init
-    initMode();
     fetchToday();
     fetchSubscribers();
     setInterval(fetchToday, 5 * 60 * 1000);

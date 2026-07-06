@@ -56,8 +56,42 @@ def signal_modifier(signals: list[dict]) -> int:
     return mod
 
 
-def compute_score(base: int, w_mod: int, s_mod: int) -> int:
-    return min(base + w_mod + s_mod, 10)
+def corridor_modifier(corridor_reports: list[dict]) -> int:
+    """
+    Real corridor reports (from @lagostraffic961 and keyword monitoring) are
+    the only ground truth this pipeline has for current conditions. Unlike
+    signal_modifier above, this can pull the score DOWN as well as up: the
+    base/weather formula alone can put a rainy weekday evening near Gridlock
+    even when most named corridors are actually reported clear, and the
+    badge should reflect that, not just the time of day.
+
+    Bounded to +2/-2 so it nudges the deterministic base rather than
+    replacing it — a handful of confirmed incidents can escalate, a broad,
+    uncontradicted set of clear reports can de-escalate, but neither alone
+    can swing the score by more than 2.
+    """
+    if not corridor_reports:
+        return 0
+
+    incidents = sum(1 for r in corridor_reports if r.get("status") == "incident")
+    busy      = sum(1 for r in corridor_reports if r.get("status") == "busy")
+    clear     = sum(1 for r in corridor_reports if r.get("status") == "clear")
+    total     = len(corridor_reports)
+
+    if incidents >= 3:
+        return 2
+    if incidents >= 1 or busy >= 3:
+        return 1
+    # No incidents and not broadly busy — look for a real "roads are clear" signal.
+    if total >= 3 and clear / total >= 0.7:
+        return -2
+    if total >= 2 and clear / total >= 0.5:
+        return -1
+    return 0
+
+
+def compute_score(base: int, w_mod: int, s_mod: int, c_mod: int = 0) -> int:
+    return max(1, min(base + w_mod + s_mod + c_mod, 10))
 
 
 def score_to_level(score: int) -> tuple[str, str]:
@@ -69,18 +103,22 @@ def score_to_level(score: int) -> tuple[str, str]:
 
 
 def full_score(day: str, hour: int, precip_hours: int, precip_sum_mm: float,
-               month: int, signals: list[dict]) -> dict:
+               month: int, signals: list[dict], corridor_reports: list[dict] | None = None) -> dict:
     base   = get_base_score(day, hour)
     w_mod  = weather_modifier(precip_hours, precip_sum_mm, month)
     s_mod  = signal_modifier(signals)
-    score  = compute_score(base, w_mod, s_mod)
+    c_mod  = corridor_modifier(corridor_reports or [])
+    score  = compute_score(base, w_mod, s_mod, c_mod)
     level, color = score_to_level(score)
+    uncapped = base + w_mod + s_mod + c_mod
     return {
-        "base_score":       base,
-        "weather_modifier": w_mod,
-        "signal_modifier":  s_mod,
-        "final_score":      score,
-        "level":            level,
-        "hex_color":        color,
-        "capped_at_10":     (base + w_mod + s_mod) > 10,
+        "base_score":        base,
+        "weather_modifier":  w_mod,
+        "signal_modifier":   s_mod,
+        "corridor_modifier": c_mod,
+        "final_score":       score,
+        "level":             level,
+        "hex_color":         color,
+        "capped_at_10":      uncapped > 10,
+        "capped_at_1":       uncapped < 1,
     }
