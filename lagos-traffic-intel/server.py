@@ -146,7 +146,7 @@ async def api_embed():
             "high_confidence_zones": high_zones,
         },
         "subscribe": {
-            "telegram":     "https://t.me/lagostrafficintel",
+            "telegram":     "https://t.me/+BEpdDOqEm1IxYjI8",
             "channel_name": "Lagos Traffic Intel",
         },
         "is_stale": mark_stale(today),
