@@ -30,6 +30,7 @@ STATIC_DIR  = os.path.join(BASE_DIR, "static")
 LOG_DIR     = os.path.join(BASE_DIR, "logs")
 TODAY_JSON  = os.path.join(DATA_DIR, "today.json")
 HISTORY_JSON = os.path.join(DATA_DIR, "history.json")
+SEEN_POSTS_JSON = os.path.join(DATA_DIR, "seen_posts.json")
 
 # ── Scoring matrix: (day_of_week, hour_start, hour_end_exclusive) → base_score ─
 # Covers all hours; morning pipeline uses the 6–9 slot.

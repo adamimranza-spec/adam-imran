@@ -72,10 +72,14 @@ async def health():
 
 
 @app.post("/run")
-async def trigger_run():
-    """Manually trigger the pipeline. Used for first-run and debugging."""
-    asyncio.create_task(run_pipeline())
-    return {"ok": True, "message": "Pipeline triggered. Check /api/today in ~30 seconds."}
+async def trigger_run(dry_run: bool = False):
+    """
+    Manually trigger the pipeline. Used for first-run and debugging.
+    Pass ?dry_run=true to run the full pipeline (writes today.json as usual)
+    without posting to the live Telegram channel.
+    """
+    asyncio.create_task(run_pipeline(send_telegram=not dry_run))
+    return {"ok": True, "dry_run": dry_run, "message": "Pipeline triggered. Check /api/today in ~30 seconds."}
 
 
 @app.get("/api/today")

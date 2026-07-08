@@ -1,6 +1,7 @@
 """
 Pipeline orchestrator. Run directly for manual/one-off execution:
-  python main.py
+  python main.py              # real run, posts to the live Telegram channel
+  python main.py --dry-run    # same pipeline, skips the Telegram send (use this for testing)
 
 Called by APScheduler in server.py at 5:45 AM and 4:00 PM WAT daily.
 """
@@ -22,7 +23,7 @@ from signals import (
     parse_corridor_reports,
     signals_to_text,
 )
-from storage import append_history, write_today
+from storage import append_history, filter_new_posts, write_today
 from telegram import send_alert
 from trigify import fetch_trigify_posts
 from weather import fetch_weather
@@ -47,7 +48,7 @@ def _setup_logger() -> logging.Logger:
     return logger
 
 
-async def run_pipeline() -> dict | None:
+async def run_pipeline(send_telegram: bool = True) -> dict | None:
     logger = _setup_logger()
     now    = datetime.now(LAGOS_TZ)
     logger.info("Pipeline starting — %s", now.isoformat())
@@ -67,9 +68,14 @@ async def run_pipeline() -> dict | None:
     }
     tg_posts = tg_posts or []
 
+    # Drop posts already used in a previous run (e.g. a 4pm accident report
+    # that's still the newest thing in the feed at 5:45am the next morning)
+    # so the same report doesn't get re-surfaced as if it just happened.
+    tg_posts, dup_posts = filter_new_posts(tg_posts)
+
     logger.info(
-        "Collected: weather=%s, tg_posts=%d",
-        weather_data.get("condition_label"), len(tg_posts),
+        "Collected: weather=%s, tg_posts=%d new (%d already seen, skipped)",
+        weather_data.get("condition_label"), len(tg_posts), len(dup_posts),
     )
 
     # ── 2. Extract signals ────────────────────────────────────────────────────
@@ -125,6 +131,7 @@ async def run_pipeline() -> dict | None:
         "flood_zones":      flood_zones,
         "signal_lines":     signals_to_text(signals),
         "corridor_reports_text": corridor_reports_to_text(corridor_reports),
+        "corridor_reports": corridor_reports,
     }
 
     narrative, used_fallback = await _safe(
@@ -133,7 +140,7 @@ async def run_pipeline() -> dict | None:
 
     if narrative is None:
         from narrator import get_fallback_narrative
-        narrative    = get_fallback_narrative(score_result["level"], period)
+        narrative    = get_fallback_narrative(score_result["level"], period, corridor_reports)
         used_fallback = True
 
     logger.info("Narrative ready (fallback=%s): %.80s...", used_fallback, narrative)
@@ -201,8 +208,11 @@ async def run_pipeline() -> dict | None:
     logger.info("today.json written")
 
     # ── 9. Telegram ───────────────────────────────────────────────────────────
-    tg_ok = await _safe(lambda: send_alert(today), logger, "telegram") or False
-    logger.info("Telegram delivery: %s", "OK" if tg_ok else "FAILED")
+    if send_telegram:
+        tg_ok = await _safe(lambda: send_alert(today), logger, "telegram") or False
+        logger.info("Telegram delivery: %s", "OK" if tg_ok else "FAILED")
+    else:
+        logger.info("Telegram delivery: skipped (dry run)")
 
     logger.info("Pipeline complete")
     return today
@@ -276,4 +286,6 @@ async def _safe(coro_fn, logger: logging.Logger, name: str):
 
 
 if __name__ == "__main__":
-    asyncio.run(run_pipeline())
+    import sys
+    dry_run = "--dry-run" in sys.argv or "--no-telegram" in sys.argv
+    asyncio.run(run_pipeline(send_telegram=not dry_run))

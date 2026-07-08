@@ -1,6 +1,7 @@
 data/today.json
 data/history.json
 data/subscriber_baseline.json
+data/seen_posts.json
 logs/
 __pycache__/
 *.pyc

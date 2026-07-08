@@ -24,22 +24,17 @@ def _sanitize(text: str) -> str:
 
 
 def _format_message(today: dict) -> str:
-    traffic  = today.get("traffic", {})
-    level    = traffic.get("level", "Unknown")
+    """
+    Flood risk is intentionally NOT repeated here as a separate bullet block:
+    the narrative already folds it in as one grounded, hedged sentence (see
+    narrator.py rule 5). A second mechanical "zone name (CONFIDENCE)" list
+    right under it was pure duplication and read like a data dump instead of
+    a heads up from a person.
+    """
     date_lbl = today.get("date_label", "")
-    narrative = traffic.get("narrative", "")
-    flood_zones = today.get("flood_zones", [])
+    narrative = today.get("traffic", {}).get("narrative", "")
 
-    lines = [f"Lagos Traffic Intel - {date_lbl}", "", narrative]
-
-    if flood_zones:
-        lines.append("")
-        lines.append("⚠ FLOOD ADVISORY")
-        for z in flood_zones[:5]:
-            lines.append(f"• {z['name']} ({z['confidence']})")
-
-    lines.append("")
-    lines.append("lagostraffic.ng")  # placeholder — update when domain is live
+    lines = [f"Lagos Traffic Intel - {date_lbl}", "", narrative, "", "lagostraffic.ng"]
     return "\n".join(lines)
 
 
