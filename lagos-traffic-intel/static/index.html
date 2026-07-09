@@ -159,6 +159,16 @@
       height: 2px;
       background: repeating-linear-gradient(90deg, rgba(255,255,255,0.55) 0 10px, transparent 10px 20px);
     }
+    /* Skyline landmarks: static, low-opacity, sitting on the road line so
+       they read as distant background scenery behind the moving bus rather
+       than competing with it. Drawn before .vehicle in the markup so they
+       stack underneath without needing an explicit z-index. The theatre is
+       a solid silhouette (it's a building); the bridge is thin cable lines
+       (it's a wireframe structure), same opacity so they sit at the same
+       visual depth. */
+    .landmark { position: absolute; bottom: 20px; opacity: 0.22; }
+    .landmark.theatre { left: 5%; fill: #fff; }
+    .landmark.bridge { right: 6%; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; }
     .vehicle { position: absolute; will-change: transform; }
     .vehicle svg { display: block; }
     .bus { top: 12px; width: 136px; animation: driveRight 13s linear infinite; }
@@ -346,6 +356,20 @@
       <div class="badge-score" id="badge-score"><b>9</b> / 10</div>
 
       <div class="road-strip" aria-hidden="true">
+        <svg class="landmark theatre" viewBox="0 0 64 44" width="64" height="44">
+          <rect x="4" y="30" width="56" height="14"/>
+          <path d="M8 30 Q8 16 20 14 Q26 21 32 21 Q38 21 44 14 Q56 16 56 30 Z"/>
+        </svg>
+        <svg class="landmark bridge" viewBox="0 0 90 50" width="90" height="50">
+          <line x1="45" y1="4" x2="45" y2="40"/>
+          <line x1="2" y1="40" x2="88" y2="40"/>
+          <line x1="45" y1="10" x2="12" y2="40"/>
+          <line x1="45" y1="16" x2="22" y2="40"/>
+          <line x1="45" y1="22" x2="32" y2="40"/>
+          <line x1="45" y1="10" x2="78" y2="40"/>
+          <line x1="45" y1="16" x2="68" y2="40"/>
+          <line x1="45" y1="22" x2="58" y2="40"/>
+        </svg>
         <div class="vehicle bus">
           <svg viewBox="0 0 320 150" width="136" height="64">
             <ellipse cx="150" cy="132" rx="150" ry="6" fill="#000" opacity="0.4"/>
@@ -389,8 +413,8 @@
     </div>
 
     <div class="date-row">
-      <div class="date-label" id="date-label">Monday, July 7</div>
-      <div class="updated-time" id="updated-time">Updated 5:47 AM</div>
+      <div class="date-label" id="date-label">Loading…</div>
+      <div class="updated-time" id="updated-time"></div>
     </div>
 
     </div>
@@ -402,7 +426,7 @@
 
     <section class="narrative">
       <p id="narrative-text" class="loading">
-        Expect a rough Monday morning across Lagos. The overnight rain has saturated drains along major corridors: Third Mainland Bridge, Lekki-Epe, and Oshodi-Apapa will all see significant delays. Leave earlier than usual or wait until mid-morning.
+        Loading the current Lagos traffic status…
       </p>
     </section>
 
@@ -464,26 +488,22 @@
       Gridlock: { color: '#9F1C2C' },
     };
 
-    // Demo fallback (shown when API is unreachable)
+    // Fallback shown when the API is unreachable. Deliberately generic and
+    // honest (no specific day, no specific road claims, is_stale forced true)
+    // rather than a confident-sounding but fabricated report - a fallback
+    // that reads like a real, current update is worse than no update at all.
     const DEMO = {
       traffic: {
-        level: 'Severe',
-        score: 9,
-        hex_color: '#E63946',
-        narrative: 'Expect a difficult Monday morning across Lagos. The overnight rain has saturated drains along all major corridors: Third Mainland Bridge, Lekki-Epe Expressway, and Oshodi-Apapa Expressway will all see heavy delays. Leave at least 30 minutes earlier than usual, or wait until mid-morning.'
+        level: 'Moderate',
+        score: 5,
+        hex_color: '#F5A623',
+        narrative: "We couldn't load the current traffic status. Check back shortly, updates run at 6:30 AM, 4:00 PM, and 8:00 PM WAT."
       },
-      date_label: 'Monday, July 7',
-      areas_to_watch: [
-        'Third Mainland Bridge / Iyana-Oworo approach',
-        'Lekki-Epe Expressway (Sangotedo-Ajah)',
-        'Oshodi-Apapa Expressway'
-      ],
-      flood_zones: [
-        { name: 'Oshodi-Apapa / Apakun Bridge underpass', confidence: 'HIGH' },
-        { name: 'Iyana-Oworo / Third Mainland Bridge approach', confidence: 'HIGH' }
-      ],
-      generated_at: new Date().toISOString(),
-      meta: { is_stale: false }
+      date_label: '',
+      areas_to_watch: [],
+      flood_zones: [],
+      generated_at: null,
+      meta: { is_stale: true }
     };
 
     let usingDemo = false;
