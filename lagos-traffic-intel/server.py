@@ -110,29 +110,33 @@ async def trigger_run(dry_run: bool = False):
     return {"ok": True, "dry_run": dry_run, "message": "Pipeline triggered. Check /api/today in ~30 seconds."}
 
 
-WEBHOOK_FIELD_SEP = "\x01"  # a control char, cannot appear in real tweet text
+WEBHOOK_FIELD_SEP = "|"       # plain visible delimiter between the 4 known-single-line fields
+WEBHOOK_NEWLINE_MARKER = "~n~"  # what the workflow's AI step replaces newlines with before sending
 
 
 @app.post("/webhook/trigify-post")
 async def trigify_webhook(request: Request):
     """
     Receives real-time posts from the Trigify workflow (New Post trigger on
-    each saved search -> HTTP Request action). Exists because both searches
-    are capped at Trigify's own DAILY re-crawl frequency (confirmed
+    each saved search -> an AI step, then HTTP Request). Exists because both
+    searches are capped at Trigify's own DAILY re-crawl frequency (confirmed
     2026-07-09, there is no hourly tier), so polling GET /searches/{id}/results
     at pipeline run time alone can be up to a day stale; this captures each
     new matching post the moment Trigify's engine detects it.
 
-    Body is NOT JSON: Trigify's `{{ !ref(...) }}` templating does raw string
-    substitution with no JSON-escaping, so a real tweet's text (which almost
-    always contains literal newlines, e.g. "TRAFFIC UPDATE FROM X\n\nBody...")
-    breaks a hand-built JSON body the moment it's substituted in (confirmed
-    2026-07-09: a static/no-templating body worked fine, but the same body
-    with a real multi-line post failed with an opaque platform error).
-    Instead the workflow sends postUrl, authorUrl, datePosted, source, then
-    text (in that order) joined by WEBHOOK_FIELD_SEP, with text last and
-    split off with maxsplit so its content, including any literal newlines,
-    can't break the parsing.
+    Body is NOT JSON, and can't contain a raw newline at all: Trigify's
+    http_request action fails (opaque platform error, confirmed 2026-07-09
+    across body, headers, and queryParams) the instant the resolved string
+    contains ANY raw control character, not just when it breaks JSON syntax
+    - even a hand-built delimiter using \\x01, or a plain newline with no
+    JSON around it at all, reproduced the failure. There's no template
+    filter to pre-escape a referenced field's value and no deterministic
+    transform action available, so the workflow runs a generic_agent step
+    first that reproduces the post text verbatim but with every newline
+    replaced by WEBHOOK_NEWLINE_MARKER, and THAT is what gets sent. The
+    fields are joined by WEBHOOK_FIELD_SEP (postUrl, authorUrl, datePosted,
+    source are all guaranteed single-line, so a plain "|" is safe there),
+    with the marker-escaped text last.
     """
     if not TRIGIFY_WEBHOOK_SECRET or request.headers.get("X-Webhook-Secret") != TRIGIFY_WEBHOOK_SECRET:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
@@ -143,6 +147,7 @@ async def trigify_webhook(request: Request):
         return JSONResponse({"error": "malformed body"}, status_code=400)
 
     post_url, author_url, date_posted, source, text = parts
+    text = text.replace(WEBHOOK_NEWLINE_MARKER, "\n")
     append_live_post({
         "text":      text[:600],
         "author":    author_url,
