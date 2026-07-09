@@ -3,7 +3,46 @@ Extracts structured traffic events from raw article/post text.
 Pattern-matched, no AI call — this keeps signal detection cheap and fast.
 """
 
+import html
 import re
+from datetime import datetime, timezone
+
+from config import MAX_POST_AGE_HOURS
+
+
+def _is_recent(posted_at: str, max_age_hours: float = MAX_POST_AGE_HOURS) -> bool:
+    """
+    True if posted_at is within max_age_hours of now. Missing/unparseable
+    timestamps are treated as recent (better to keep a post than silently
+    drop real information over an API quirk) — this is only meant to catch
+    posts we can positively confirm are stale, like a ~20h old accident
+    report still being described as a current condition the next morning.
+    """
+    if not posted_at:
+        return True
+    try:
+        ts = datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        age_hours = (datetime.now(timezone.utc) - ts).total_seconds() / 3600
+        return age_hours <= max_age_hours
+    except (ValueError, TypeError):
+        return True
+
+
+def _is_reply(text: str) -> bool:
+    """
+    True if a post is a reply (starts with an @mention), which on X/Twitter
+    is almost always conversational/reactive rather than a primary report.
+    Found live 2026-07-09: a sarcastic reply ("@bigbank0125 @DOlusegun This
+    is such a stupid comment. People had accident on third mainland bridge
+    too, so does that mean the bridge shouldn't exist?") matched the accident
+    pattern below purely on keyword proximity and got treated as a real
+    MEDIUM-severity traffic event. Replies are cheap and reliable to filter
+    out before pattern matching even runs.
+    """
+    return text.strip().startswith("@")
+
 
 # (pattern, event_type, severity, affected_route_hint)
 SIGNAL_PATTERNS: list[tuple[re.Pattern, str, str, str]] = [
@@ -52,7 +91,11 @@ def extract_signals(articles: list[dict], posts: list[dict]) -> list[dict]:
             text = f"{a.get('title', '')} {a.get('snippet', '')}"
             all_texts.append((text, a.get("source", "news"), a.get("url", "")))
     for p in posts:
+        if p.get("error"):
+            continue
         text = p.get("text", "") or p.get("content", "") or str(p)
+        if _is_reply(text) or not _is_recent(p.get("posted_at", "")):
+            continue
         all_texts.append((text, "trigify", p.get("url", "")))
 
     for text, source, url in all_texts:
@@ -76,6 +119,7 @@ def extract_signals(articles: list[dict], posts: list[dict]) -> list[dict]:
 
 
 def _clean_description(text: str) -> str:
+    text = html.unescape(text)
     text = re.sub(r"\s+", " ", text).strip()
     return text[:200]
 
@@ -118,11 +162,14 @@ def parse_corridor_reports(posts: list[dict]) -> list[dict]:
     for p in posts:
         if p.get("error"):
             continue
+        if not _is_recent(p.get("posted_at", "")):
+            continue
         text = (p.get("text") or "").strip()
         m = _CORRIDOR_HEADER_RE.match(text)
         if not m:
             continue
         header, area, body = m.groups()
+        body = html.unescape(body)
         body = re.sub(r"\s+", " ", body).strip()
         if not body:
             continue

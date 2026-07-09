@@ -9,6 +9,14 @@ TRIGIFY_API_KEY    = os.getenv("TRIGIFY_API_KEY", "")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8782744685:AAF5Rw4KeggrZCWsTRYJjDLdsHzooDpQ1ZU")
 TELEGRAM_CHANNEL   = os.getenv("TELEGRAM_CHANNEL", "-1004333163645")
 
+# Shared secret the Trigify workflow's HTTP Request action sends back so
+# /webhook/trigify-post can reject calls that aren't actually from Trigify.
+# No hardcoded fallback on purpose (unlike TELEGRAM_BOT_TOKEN above, which
+# already shouldn't do that either): set TRIGIFY_WEBHOOK_SECRET in .env
+# locally and as a Railway environment variable in production, never commit
+# the actual value to source.
+TRIGIFY_WEBHOOK_SECRET = os.getenv("TRIGIFY_WEBHOOK_SECRET", "")
+
 # ── Trigify saved searches ─────────────────────────────────────────────────────
 TRIGIFY_SEARCH_KEYWORDS     = "d1da38c4-36ab-4448-94a8-c694245893de"
 TRIGIFY_SEARCH_LAGOSTRAFFIC = "e07ed569-1bed-4174-9864-8c4dc51043e1"
@@ -31,6 +39,39 @@ LOG_DIR     = os.path.join(BASE_DIR, "logs")
 TODAY_JSON  = os.path.join(DATA_DIR, "today.json")
 HISTORY_JSON = os.path.join(DATA_DIR, "history.json")
 SEEN_POSTS_JSON = os.path.join(DATA_DIR, "seen_posts.json")
+
+# Real-time posts pushed by the Trigify workflow (see /webhook/trigify-post
+# in server.py) are kept here, separate from seen_posts.json above. Both
+# saved searches are capped at Trigify's own DAILY re-crawl frequency
+# (confirmed 2026-07-09, there is no hourly tier), so polling
+# GET /searches/{id}/results at pipeline run time can be up to a day stale.
+# The workflow instead forwards each new matching post the moment Trigify
+# detects it; the pipeline merges this feed with the daily poll as a
+# fallback/backstop.
+LIVE_POSTS_JSON = os.path.join(DATA_DIR, "live_posts.json")
+LIVE_POSTS_RETENTION_HOURS = 48
+LIVE_POSTS_MAX = 300
+
+# A post older than this is dropped before it can become a corridor report or
+# signal, regardless of whether it's been "seen" before. Found live on
+# 2026-07-09: the 5:45am run reported a tanker breakdown and flash flooding
+# as current when the underlying posts were from the previous morning
+# (~20h old), and a Mile 2 congestion claim sourced from a ~35h old post.
+# Dedup alone doesn't catch this, it only stops reusing a post that's
+# already been seen; a post that's simply old and never seen before still
+# needs an explicit freshness check.
+#
+# 20h, not the ~10h15m gap between pipeline runs, because both Trigify
+# searches are configured at `frequency: DAILY` (confirmed via `trigify
+# search get`), which is the most frequent option the platform offers for a
+# saved search's own re-crawl cycle, there is no hourly tier. So one of the
+# two daily pipeline runs will structurally see data that's many hours old
+# no matter what. 20h still excludes genuinely dead data (the 35h Mile 2
+# report) without zeroing out every run just because the daily crawl hasn't
+# landed yet. The real fix is switching to a Trigify workflow with a
+# real-time "New Post" trigger instead of polling the search's own results,
+# see conversation 2026-07-09 for the tradeoffs on that.
+MAX_POST_AGE_HOURS = 20
 
 # ── Scoring matrix: (day_of_week, hour_start, hour_end_exclusive) → base_score ─
 # Covers all hours; morning pipeline uses the 6–9 slot.

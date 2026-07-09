@@ -3,7 +3,10 @@ import json
 import os
 from datetime import datetime, timezone
 
-from config import TODAY_JSON, HISTORY_JSON, SEEN_POSTS_JSON, DATA_DIR
+from config import (
+    TODAY_JSON, HISTORY_JSON, SEEN_POSTS_JSON, DATA_DIR,
+    LIVE_POSTS_JSON, LIVE_POSTS_RETENTION_HOURS, LIVE_POSTS_MAX,
+)
 
 MAX_HISTORY = 30
 
@@ -154,3 +157,52 @@ def mark_stale(today_data: dict | None) -> bool:
         return age_hours > STALE_THRESHOLD_HOURS
     except (ValueError, TypeError):
         return True
+
+
+def read_live_posts() -> list[dict]:
+    """
+    Posts pushed in real time by the Trigify workflow (see
+    /webhook/trigify-post in server.py), as opposed to the daily-refreshed
+    GET /searches/{id}/results poll in trigify.py. Found 2026-07-09: both
+    saved searches are capped at Trigify's own DAILY re-crawl frequency
+    (there's no hourly tier), so the poll alone can be up to a day stale.
+    """
+    try:
+        with open(LIVE_POSTS_JSON, encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def append_live_post(post: dict) -> None:
+    """
+    Appends one real-time post, pruning anything older than
+    LIVE_POSTS_RETENTION_HOURS and capping the list at LIVE_POSTS_MAX so it
+    can't grow unbounded between pipeline runs. Posts with a missing or
+    unparseable posted_at are kept rather than dropped, matching the same
+    "don't lose real information over an API quirk" rule used elsewhere
+    (see signals.py's _is_recent).
+    """
+    _ensure_dirs()
+    posts = read_live_posts()
+    posts.append(post)
+
+    now = datetime.now(timezone.utc)
+    fresh: list[dict] = []
+    for p in posts:
+        posted_at = p.get("posted_at", "")
+        try:
+            ts = datetime.fromisoformat(posted_at.replace("Z", "+00:00"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            if (now - ts).total_seconds() / 3600 <= LIVE_POSTS_RETENTION_HOURS:
+                fresh.append(p)
+        except (ValueError, TypeError):
+            fresh.append(p)
+
+    fresh = fresh[-LIVE_POSTS_MAX:]
+
+    tmp = LIVE_POSTS_JSON + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(fresh, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, LIVE_POSTS_JSON)

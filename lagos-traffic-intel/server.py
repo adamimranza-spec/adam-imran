@@ -11,14 +11,14 @@ from datetime import datetime
 
 import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from config import DELAY_MULTIPLIER, STATIC_DIR
+from config import DELAY_MULTIPLIER, STATIC_DIR, TRIGIFY_WEBHOOK_SECRET
 from main import run_pipeline
-from storage import mark_stale, read_history, read_today
+from storage import append_live_post, mark_stale, read_history, read_today
 from telegram import get_subscriber_count
 
 LAGOS_TZ = pytz.timezone("Africa/Lagos")
@@ -108,6 +108,33 @@ async def trigger_run(dry_run: bool = False):
     """
     asyncio.create_task(run_pipeline(send_telegram=not dry_run))
     return {"ok": True, "dry_run": dry_run, "message": "Pipeline triggered. Check /api/today in ~30 seconds."}
+
+
+@app.post("/webhook/trigify-post")
+async def trigify_webhook(request: Request):
+    """
+    Receives real-time posts from the Trigify workflow (Multi-Post trigger
+    on both saved searches -> HTTP Request action). Exists because both
+    searches are capped at Trigify's own DAILY re-crawl frequency (confirmed
+    2026-07-09, there is no hourly tier), so polling GET /searches/{id}/results
+    at pipeline run time alone can be up to a day stale; this captures each
+    new matching post the moment Trigify's engine detects it.
+    """
+    if not TRIGIFY_WEBHOOK_SECRET or request.headers.get("X-Webhook-Secret") != TRIGIFY_WEBHOOK_SECRET:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    try:
+        payload = await request.json()
+    except Exception:
+        return JSONResponse({"error": "invalid JSON body"}, status_code=400)
+
+    append_live_post({
+        "text":      str(payload.get("text", ""))[:600],
+        "author":    payload.get("author_url", ""),
+        "posted_at": payload.get("posted_at", ""),
+        "url":       payload.get("post_url", ""),
+    })
+    return {"ok": True}
 
 
 @app.get("/api/today")

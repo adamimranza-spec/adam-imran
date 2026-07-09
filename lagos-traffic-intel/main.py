@@ -23,7 +23,7 @@ from signals import (
     parse_corridor_reports,
     signals_to_text,
 )
-from storage import append_history, filter_new_posts, write_today
+from storage import append_history, filter_new_posts, read_live_posts, write_today
 from telegram import send_alert
 from trigify import fetch_trigify_posts
 from weather import fetch_weather
@@ -68,14 +68,23 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
     }
     tg_posts = tg_posts or []
 
+    # Both Trigify searches are capped at DAILY re-crawl frequency (confirmed
+    # 2026-07-09, no hourly tier), so the poll above alone can be up to a day
+    # stale. live_posts is fed in near-real-time by the Trigify workflow (see
+    # /webhook/trigify-post in server.py) and merged in here; filter_new_posts
+    # below dedupes by URL, so any post both sources happen to return isn't
+    # double counted.
+    live_posts = read_live_posts()
+    tg_posts = tg_posts + live_posts
+
     # Drop posts already used in a previous run (e.g. a 4pm accident report
     # that's still the newest thing in the feed at 5:45am the next morning)
     # so the same report doesn't get re-surfaced as if it just happened.
     tg_posts, dup_posts = filter_new_posts(tg_posts)
 
     logger.info(
-        "Collected: weather=%s, tg_posts=%d new (%d already seen, skipped)",
-        weather_data.get("condition_label"), len(tg_posts), len(dup_posts),
+        "Collected: weather=%s, tg_posts=%d new (%d already seen, skipped; %d from live webhook feed)",
+        weather_data.get("condition_label"), len(tg_posts), len(dup_posts), len(live_posts),
     )
 
     # ── 2. Extract signals ────────────────────────────────────────────────────
