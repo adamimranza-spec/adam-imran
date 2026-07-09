@@ -110,29 +110,44 @@ async def trigger_run(dry_run: bool = False):
     return {"ok": True, "dry_run": dry_run, "message": "Pipeline triggered. Check /api/today in ~30 seconds."}
 
 
+WEBHOOK_FIELD_SEP = "\x01"  # a control char, cannot appear in real tweet text
+
+
 @app.post("/webhook/trigify-post")
 async def trigify_webhook(request: Request):
     """
-    Receives real-time posts from the Trigify workflow (Multi-Post trigger
-    on both saved searches -> HTTP Request action). Exists because both
-    searches are capped at Trigify's own DAILY re-crawl frequency (confirmed
+    Receives real-time posts from the Trigify workflow (New Post trigger on
+    each saved search -> HTTP Request action). Exists because both searches
+    are capped at Trigify's own DAILY re-crawl frequency (confirmed
     2026-07-09, there is no hourly tier), so polling GET /searches/{id}/results
     at pipeline run time alone can be up to a day stale; this captures each
     new matching post the moment Trigify's engine detects it.
+
+    Body is NOT JSON: Trigify's `{{ !ref(...) }}` templating does raw string
+    substitution with no JSON-escaping, so a real tweet's text (which almost
+    always contains literal newlines, e.g. "TRAFFIC UPDATE FROM X\n\nBody...")
+    breaks a hand-built JSON body the moment it's substituted in (confirmed
+    2026-07-09: a static/no-templating body worked fine, but the same body
+    with a real multi-line post failed with an opaque platform error).
+    Instead the workflow sends postUrl, authorUrl, datePosted, source, then
+    text (in that order) joined by WEBHOOK_FIELD_SEP, with text last and
+    split off with maxsplit so its content, including any literal newlines,
+    can't break the parsing.
     """
     if not TRIGIFY_WEBHOOK_SECRET or request.headers.get("X-Webhook-Secret") != TRIGIFY_WEBHOOK_SECRET:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
-    try:
-        payload = await request.json()
-    except Exception:
-        return JSONResponse({"error": "invalid JSON body"}, status_code=400)
+    raw = (await request.body()).decode("utf-8", errors="replace")
+    parts = raw.split(WEBHOOK_FIELD_SEP, 4)
+    if len(parts) != 5:
+        return JSONResponse({"error": "malformed body"}, status_code=400)
 
+    post_url, author_url, date_posted, source, text = parts
     append_live_post({
-        "text":      str(payload.get("text", ""))[:600],
-        "author":    payload.get("author_url", ""),
-        "posted_at": payload.get("posted_at", ""),
-        "url":       payload.get("post_url", ""),
+        "text":      text[:600],
+        "author":    author_url,
+        "posted_at": date_posted,
+        "url":       post_url,
     })
     return {"ok": True}
 
