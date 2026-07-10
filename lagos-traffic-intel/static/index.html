@@ -167,7 +167,7 @@
        (it's a wireframe structure), same opacity so they sit at the same
        visual depth. */
     .landmark { position: absolute; bottom: 20px; opacity: 0.22; }
-    .landmark.theatre { left: 5%; fill: #fff; }
+    .landmark.theatre { left: 5%; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .landmark.bridge { right: 6%; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; }
     .vehicle { position: absolute; will-change: transform; }
     .vehicle svg { display: block; }
@@ -356,9 +356,9 @@
       <div class="badge-score" id="badge-score"><b>9</b> / 10</div>
 
       <div class="road-strip" aria-hidden="true">
-        <svg class="landmark theatre" viewBox="0 0 64 44" width="64" height="44">
-          <rect x="4" y="30" width="56" height="14"/>
-          <path d="M8 30 Q8 16 20 14 Q26 21 32 21 Q38 21 44 14 Q56 16 56 30 Z"/>
+        <svg class="landmark theatre" viewBox="0 0 80 40" width="80" height="40">
+          <rect x="6" y="26" width="68" height="10"/>
+          <path d="M6 26 C6 15 15 9 23 9 C28 9 30 14 40 16 C50 14 52 9 57 9 C65 9 74 15 74 26"/>
         </svg>
         <svg class="landmark bridge" viewBox="0 0 90 50" width="90" height="50">
           <line x1="45" y1="4" x2="45" y2="40"/>
