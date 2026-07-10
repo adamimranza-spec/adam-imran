@@ -27,6 +27,7 @@ from storage import append_history, filter_new_posts, read_live_posts, write_tod
 from telegram import send_alert
 from trigify import fetch_trigify_posts
 from weather import fetch_weather
+from x_poll import fetch_x_posts
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -57,9 +58,10 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
     # News scraping (Pulse Nigeria, Vanguard) was dropped 2026-07-06: both were
     # unreliable (403-blocked / matching the wrong page elements) and Trigify's
     # corridor reports + keyword search cover real ground truth well on their own.
-    weather_data, tg_posts = await asyncio.gather(
+    weather_data, tg_posts, x_posts = await asyncio.gather(
         _safe(fetch_weather, logger, "weather"),
         _safe(fetch_trigify_posts, logger, "trigify"),
+        _safe(fetch_x_posts, logger, "twitterapi_io"),
     )
 
     weather_data = weather_data or {
@@ -67,6 +69,9 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
         "condition_label": "Unknown", "season": "dry", "season_label": "Unknown", "month": now.month,
     }
     tg_posts = tg_posts or []
+    x_posts = x_posts or []
+    for p in x_posts:
+        p["_source"] = "twitterapi_io"
 
     # Both Trigify searches are capped at DAILY re-crawl frequency (confirmed
     # 2026-07-09, no hourly tier), so the poll above alone can be up to a day
@@ -75,7 +80,13 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
     # below dedupes by URL, so any post both sources happen to return isn't
     # double counted.
     live_posts = read_live_posts()
-    tg_posts = tg_posts + live_posts
+
+    # x_posts (TwitterAPI.io, added 2026-07-10) polls @lagostraffic961 and
+    # @followlastma directly and is fresh within minutes, unlike the Trigify
+    # searches above — see x_poll.py. Merged in the same way; filter_new_posts
+    # dedupes by URL, so a post both Trigify and this source happen to return
+    # isn't double counted.
+    tg_posts = tg_posts + live_posts + x_posts
 
     # Drop posts already used in a previous run (e.g. a 4pm accident report
     # that's still the newest thing in the feed at 5:45am the next morning)
@@ -83,8 +94,8 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
     tg_posts, dup_posts = filter_new_posts(tg_posts)
 
     logger.info(
-        "Collected: weather=%s, tg_posts=%d new (%d already seen, skipped; %d from live webhook feed)",
-        weather_data.get("condition_label"), len(tg_posts), len(dup_posts), len(live_posts),
+        "Collected: weather=%s, tg_posts=%d new (%d already seen, skipped; %d from live webhook feed, %d from twitterapi.io)",
+        weather_data.get("condition_label"), len(tg_posts), len(dup_posts), len(live_posts), len(x_posts),
     )
 
     # ── 2. Extract signals ────────────────────────────────────────────────────
@@ -158,16 +169,20 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
     areas = _build_areas(score_result["level"], signals, flood_zones, corridor_reports)
 
     # ── 7. Assemble today.json ────────────────────────────────────────────────
-    sources_attempted = ["open_meteo", "trigify_keywords", "trigify_lagostraffic961"]
+    sources_attempted = ["open_meteo", "trigify_keywords", "trigify_lagostraffic961", "twitterapi_io"]
     sources_succeeded = []
     if weather_data.get("condition_label") != "Unknown":
         sources_succeeded.append("open_meteo")
     for p in tg_posts:
-        if not p.get("error"):
+        if p.get("error"):
+            continue
+        if p.get("_source") == "twitterapi_io":
+            if "twitterapi_io" not in sources_succeeded:
+                sources_succeeded.append("twitterapi_io")
+        else:
             for sid in ("trigify_keywords", "trigify_lagostraffic961"):
                 if sid not in sources_succeeded:
                     sources_succeeded.append(sid)
-            break
 
     today = {
         "schema_version": "1.0",

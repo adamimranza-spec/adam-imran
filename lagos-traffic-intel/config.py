@@ -17,6 +17,13 @@ TELEGRAM_CHANNEL   = os.getenv("TELEGRAM_CHANNEL", "-1004333163645")
 # the actual value to source.
 TRIGIFY_WEBHOOK_SECRET = os.getenv("TRIGIFY_WEBHOOK_SECRET", "")
 
+# Direct poll of @lagostraffic961 and @followlastma via TwitterAPI.io — added
+# 2026-07-10 after confirming Trigify's own DAILY re-crawl cap left both
+# accounts up to ~24h stale (a real accident post sat unseen for hours; Adam
+# spotted a fresh one on the live Twitter page that Trigify hadn't picked up
+# at all). No hardcoded fallback, same convention as TRIGIFY_WEBHOOK_SECRET.
+TWITTERAPI_IO_KEY = os.getenv("TWITTERAPI_IO_KEY", "")
+
 # ── Trigify saved searches ─────────────────────────────────────────────────────
 TRIGIFY_SEARCH_KEYWORDS     = "d1da38c4-36ab-4448-94a8-c694245893de"
 TRIGIFY_SEARCH_LAGOSTRAFFIC = "e07ed569-1bed-4174-9864-8c4dc51043e1"

@@ -152,11 +152,55 @@ _CLEAR_RE    = re.compile(r"\b(smooth|free[- ]flowing|calm|clear|encouraging|ste
 _BUSY_RE     = re.compile(r"\b(busy|slow|building|congest\w*|heavy|delay|gridlock|bumper)\b", re.I)
 _INCIDENT_RE = re.compile(r"\b(accident|broke?n? ?down|breakdown|trapped|blocked|collision|fault|fire|flood\w*)\b", re.I)
 
+# @followlastma (LASTMA's own account, added 2026-07-10 via TwitterAPI.io —
+# see x_poll.py) posts a different but equally consistent structure: an
+# optional "[HH:MMam/pm]" time prefix, then one or more area hashtags, then a
+# hashtag containing "Report" or "Management" (typos observed live, e.g.
+# "#IncientReport" — matched on the substring so spelling doesn't matter),
+# a blank line, then the plain-English body. Every real example seen is a
+# LASTMA incident/breakdown response, so kind/status are always "incident",
+# mirroring how the "INCIDENT REPORT" header above is treated regardless of
+# body wording.
+_FOLLOWLASTMA_TYPE_TAG_RE = re.compile(r"report|management", re.I)
+
+
+def _camel_split(tag: str) -> str:
+    """"IkoroduRd" -> "Ikorodu Rd" so hashtag-derived area names read naturally."""
+    return re.sub(r"(?<!^)(?=[A-Z])", " ", tag)
+
+
+def _parse_followlastma(text: str) -> dict | None:
+    parts = re.split(r"\n\s*\n", text, maxsplit=1)
+    if len(parts) != 2:
+        return None
+    header, body = parts
+    header = re.sub(r"^\[[^\]\n]{3,12}\]\s*", "", header.strip())
+    tags = re.findall(r"#(\w+)", header)
+    if not tags or not any(_FOLLOWLASTMA_TYPE_TAG_RE.search(t) for t in tags):
+        return None
+    # Header must be nothing but hashtags (plus the bracket time already
+    # stripped above) — guards against misfiring on an unrelated tweet that
+    # merely starts with a hashtag.
+    if re.sub(r"#\w+", "", header).strip():
+        return None
+    area_tags = [t for t in tags if not _FOLLOWLASTMA_TYPE_TAG_RE.search(t)]
+    body = html.unescape(body)
+    body = re.sub(r"\s+", " ", body).strip()
+    if not body:
+        return None
+    return {
+        "area":   " / ".join(_camel_split(t) for t in area_tags) if area_tags else "Lagos",
+        "kind":   "incident",
+        "status": "incident",
+        "text":   body[:280],
+    }
+
 
 def parse_corridor_reports(posts: list[dict]) -> list[dict]:
     """
-    Parses @lagostraffic961-style structured posts into per-corridor status.
-    Returns one entry per real, dated report: {area, kind, status, text, posted_at}.
+    Parses @lagostraffic961- and @followlastma-style structured posts into
+    per-corridor status. Returns one entry per real, dated report:
+    {area, kind, status, text, posted_at}.
     """
     reports: list[dict] = []
     for p in posts:
@@ -165,30 +209,37 @@ def parse_corridor_reports(posts: list[dict]) -> list[dict]:
         if not _is_recent(p.get("posted_at", "")):
             continue
         text = (p.get("text") or "").strip()
+
         m = _CORRIDOR_HEADER_RE.match(text)
-        if not m:
+        if m:
+            header, area, body = m.groups()
+            body = html.unescape(body)
+            body = re.sub(r"\s+", " ", body).strip()
+            if not body:
+                continue
+            kind = "incident" if header == "INCIDENT REPORT" else "update"
+            if kind == "incident" or _INCIDENT_RE.search(body):
+                status = "incident"
+            elif _BUSY_RE.search(body):
+                status = "busy"
+            elif _CLEAR_RE.search(body):
+                status = "clear"
+            else:
+                status = "unclear"
+            reports.append({
+                "area":      (area or "Lagos").strip(" -/,"),
+                "kind":      kind,
+                "status":    status,
+                "text":      body[:280],
+                "posted_at": p.get("posted_at", ""),
+            })
             continue
-        header, area, body = m.groups()
-        body = html.unescape(body)
-        body = re.sub(r"\s+", " ", body).strip()
-        if not body:
-            continue
-        kind = "incident" if header == "INCIDENT REPORT" else "update"
-        if kind == "incident" or _INCIDENT_RE.search(body):
-            status = "incident"
-        elif _BUSY_RE.search(body):
-            status = "busy"
-        elif _CLEAR_RE.search(body):
-            status = "clear"
-        else:
-            status = "unclear"
-        reports.append({
-            "area":      (area or "Lagos").strip(" -/,"),
-            "kind":      kind,
-            "status":    status,
-            "text":      body[:280],
-            "posted_at": p.get("posted_at", ""),
-        })
+
+        fl = _parse_followlastma(text)
+        if fl:
+            fl["posted_at"] = p.get("posted_at", "")
+            reports.append(fl)
+
     return reports
 
 
