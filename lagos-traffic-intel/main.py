@@ -23,9 +23,8 @@ from signals import (
     parse_corridor_reports,
     signals_to_text,
 )
-from storage import append_history, filter_new_posts, read_live_posts, write_today
+from storage import append_history, filter_new_posts, write_today
 from telegram import send_alert
-from trigify import fetch_trigify_posts
 from weather import fetch_weather
 from x_poll import fetch_x_posts
 
@@ -56,11 +55,14 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
 
     # ── 1. Collect all data concurrently ──────────────────────────────────────
     # News scraping (Pulse Nigeria, Vanguard) was dropped 2026-07-06: both were
-    # unreliable (403-blocked / matching the wrong page elements) and Trigify's
-    # corridor reports + keyword search cover real ground truth well on their own.
-    weather_data, tg_posts, x_posts = await asyncio.gather(
+    # unreliable (403-blocked / matching the wrong page elements). Trigify
+    # (searches + real-time webhook) was dropped 2026-07-10: its saved
+    # searches were capped at DAILY re-crawl frequency, so posts could sit
+    # unseen for up to ~24h, and the real-time webhook workaround built to
+    # compensate never once fired. Replaced with a direct TwitterAPI.io poll
+    # of @lagostraffic961 and @followlastma (x_poll.py), fresh within minutes.
+    weather_data, posts = await asyncio.gather(
         _safe(fetch_weather, logger, "weather"),
-        _safe(fetch_trigify_posts, logger, "trigify"),
         _safe(fetch_x_posts, logger, "twitterapi_io"),
     )
 
@@ -68,39 +70,21 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
         "precip_sum_mm": 0.0, "precip_hours": 0, "weather_code": 0,
         "condition_label": "Unknown", "season": "dry", "season_label": "Unknown", "month": now.month,
     }
-    tg_posts = tg_posts or []
-    x_posts = x_posts or []
-    for p in x_posts:
-        p["_source"] = "twitterapi_io"
-
-    # Both Trigify searches are capped at DAILY re-crawl frequency (confirmed
-    # 2026-07-09, no hourly tier), so the poll above alone can be up to a day
-    # stale. live_posts is fed in near-real-time by the Trigify workflow (see
-    # /webhook/trigify-post in server.py) and merged in here; filter_new_posts
-    # below dedupes by URL, so any post both sources happen to return isn't
-    # double counted.
-    live_posts = read_live_posts()
-
-    # x_posts (TwitterAPI.io, added 2026-07-10) polls @lagostraffic961 and
-    # @followlastma directly and is fresh within minutes, unlike the Trigify
-    # searches above — see x_poll.py. Merged in the same way; filter_new_posts
-    # dedupes by URL, so a post both Trigify and this source happen to return
-    # isn't double counted.
-    tg_posts = tg_posts + live_posts + x_posts
+    posts = posts or []
 
     # Drop posts already used in a previous run (e.g. a 4pm accident report
     # that's still the newest thing in the feed at 5:45am the next morning)
     # so the same report doesn't get re-surfaced as if it just happened.
-    tg_posts, dup_posts = filter_new_posts(tg_posts)
+    posts, dup_posts = filter_new_posts(posts)
 
     logger.info(
-        "Collected: weather=%s, tg_posts=%d new (%d already seen, skipped; %d from live webhook feed, %d from twitterapi.io)",
-        weather_data.get("condition_label"), len(tg_posts), len(dup_posts), len(live_posts), len(x_posts),
+        "Collected: weather=%s, posts=%d new (%d already seen, skipped)",
+        weather_data.get("condition_label"), len(posts), len(dup_posts),
     )
 
     # ── 2. Extract signals ────────────────────────────────────────────────────
-    signals = extract_signals([], tg_posts)
-    corridor_reports = parse_corridor_reports(tg_posts)
+    signals = extract_signals([], posts)
+    corridor_reports = parse_corridor_reports(posts)
     logger.info("Signals found: %d | corridor reports parsed: %d", len(signals), len(corridor_reports))
 
     # ── 3. Score ──────────────────────────────────────────────────────────────
@@ -169,20 +153,12 @@ async def run_pipeline(send_telegram: bool = True) -> dict | None:
     areas = _build_areas(score_result["level"], signals, flood_zones, corridor_reports)
 
     # ── 7. Assemble today.json ────────────────────────────────────────────────
-    sources_attempted = ["open_meteo", "trigify_keywords", "trigify_lagostraffic961", "twitterapi_io"]
+    sources_attempted = ["open_meteo", "twitterapi_io"]
     sources_succeeded = []
     if weather_data.get("condition_label") != "Unknown":
         sources_succeeded.append("open_meteo")
-    for p in tg_posts:
-        if p.get("error"):
-            continue
-        if p.get("_source") == "twitterapi_io":
-            if "twitterapi_io" not in sources_succeeded:
-                sources_succeeded.append("twitterapi_io")
-        else:
-            for sid in ("trigify_keywords", "trigify_lagostraffic961"):
-                if sid not in sources_succeeded:
-                    sources_succeeded.append(sid)
+    if any(not p.get("error") for p in posts):
+        sources_succeeded.append("twitterapi_io")
 
     today = {
         "schema_version": "1.0",

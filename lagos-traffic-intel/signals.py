@@ -77,10 +77,10 @@ SIGNAL_PATTERNS: list[tuple[re.Pattern, str, str, str]] = [
 def extract_signals(articles: list[dict], posts: list[dict]) -> list[dict]:
     """
     Combines articles (always empty now — news scraping was dropped 2026-07-06,
-    see main.py) and posts (from Trigify) into one text corpus, runs pattern
-    matching, deduplicates by event type, returns signal list. Kept accepting
-    `articles` so the signature doesn't need to change if a news source is
-    ever added back.
+    see main.py) and posts (from x_poll.py's TwitterAPI.io poll) into one text
+    corpus, runs pattern matching, deduplicates by event type, returns signal
+    list. Kept accepting `articles` so the signature doesn't need to change if
+    a news source is ever added back.
     """
     signals: list[dict] = []
     seen_types: set[str] = set()
@@ -96,7 +96,7 @@ def extract_signals(articles: list[dict], posts: list[dict]) -> list[dict]:
         text = p.get("text", "") or p.get("content", "") or str(p)
         if _is_reply(text) or not _is_recent(p.get("posted_at", "")):
             continue
-        all_texts.append((text, "trigify", p.get("url", "")))
+        all_texts.append((text, "twitter", p.get("url", "")))
 
     for text, source, url in all_texts:
         for pattern, event_type, severity, route_hint in SIGNAL_PATTERNS:

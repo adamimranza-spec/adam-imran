@@ -11,14 +11,14 @@ from datetime import datetime
 
 import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from config import DELAY_MULTIPLIER, STATIC_DIR, TRIGIFY_WEBHOOK_SECRET
+from config import DELAY_MULTIPLIER, STATIC_DIR
 from main import run_pipeline
-from storage import append_live_post, mark_stale, read_history, read_today
+from storage import mark_stale, read_history, read_today
 from telegram import get_subscriber_count
 
 LAGOS_TZ = pytz.timezone("Africa/Lagos")
@@ -109,53 +109,6 @@ async def trigger_run(dry_run: bool = False):
     """
     asyncio.create_task(run_pipeline(send_telegram=not dry_run))
     return {"ok": True, "dry_run": dry_run, "message": "Pipeline triggered. Check /api/today in ~30 seconds."}
-
-
-WEBHOOK_FIELD_SEP = "|"       # plain visible delimiter between the 4 known-single-line fields
-WEBHOOK_NEWLINE_MARKER = "~n~"  # what the workflow's AI step replaces newlines with before sending
-
-
-@app.post("/webhook/trigify-post")
-async def trigify_webhook(request: Request):
-    """
-    Receives real-time posts from the Trigify workflow (New Post trigger on
-    each saved search -> an AI step, then HTTP Request). Exists because both
-    searches are capped at Trigify's own DAILY re-crawl frequency (confirmed
-    2026-07-09, there is no hourly tier), so polling GET /searches/{id}/results
-    at pipeline run time alone can be up to a day stale; this captures each
-    new matching post the moment Trigify's engine detects it.
-
-    Body is NOT JSON, and can't contain a raw newline at all: Trigify's
-    http_request action fails (opaque platform error, confirmed 2026-07-09
-    across body, headers, and queryParams) the instant the resolved string
-    contains ANY raw control character, not just when it breaks JSON syntax
-    - even a hand-built delimiter using \\x01, or a plain newline with no
-    JSON around it at all, reproduced the failure. There's no template
-    filter to pre-escape a referenced field's value and no deterministic
-    transform action available, so the workflow runs a generic_agent step
-    first that reproduces the post text verbatim but with every newline
-    replaced by WEBHOOK_NEWLINE_MARKER, and THAT is what gets sent. The
-    fields are joined by WEBHOOK_FIELD_SEP (postUrl, authorUrl, datePosted,
-    source are all guaranteed single-line, so a plain "|" is safe there),
-    with the marker-escaped text last.
-    """
-    if not TRIGIFY_WEBHOOK_SECRET or request.headers.get("X-Webhook-Secret") != TRIGIFY_WEBHOOK_SECRET:
-        return JSONResponse({"error": "unauthorized"}, status_code=401)
-
-    raw = (await request.body()).decode("utf-8", errors="replace")
-    parts = raw.split(WEBHOOK_FIELD_SEP, 4)
-    if len(parts) != 5:
-        return JSONResponse({"error": "malformed body"}, status_code=400)
-
-    post_url, author_url, date_posted, source, text = parts
-    text = text.replace(WEBHOOK_NEWLINE_MARKER, "\n")
-    append_live_post({
-        "text":      text[:600],
-        "author":    author_url,
-        "posted_at": date_posted,
-        "url":       post_url,
-    })
-    return {"ok": True}
 
 
 @app.get("/api/today")
