@@ -237,7 +237,7 @@
       color: var(--text);
       transition: border-color 0.5s ease;
     }
-    .area-item svg { flex-shrink: 0; opacity: 0.5; }
+    .area-item svg { flex-shrink: 0; }
 
     /* Flood advisory */
     .flood-advisory {
@@ -516,7 +516,17 @@
       if (html !== undefined) e.innerHTML = html;
       return e;
     };
-    const AREA_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M2 4h10M2 10h10" stroke="currentColor" stroke-width="1.3"/></svg>';
+    // Severity dot: red for a live incident report, amber for a live "busy"
+    // report, neutral gray when this area has no matching corridor report at
+    // all (flood-zone or fallback-derived — contextual, not a confirmed
+    // live signal). Colors reused from LEVELS below so severity language
+    // stays consistent with the rest of the card.
+    const AREA_STATUS_COLOR = { incident: '#E63946', busy: '#FF7A1A' };
+    const AREA_STATUS_DEFAULT_COLOR = '#8A9790';
+    function areaDot(status) {
+      const color = AREA_STATUS_COLOR[status] || AREA_STATUS_DEFAULT_COLOR;
+      return `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="${color}"/></svg>`;
+    }
 
     // Badge auto-fit
     // The container is capped at a fixed max-width, so a viewport-relative
@@ -583,10 +593,12 @@
 
       // Areas
       const areas = data.areas_to_watch || [];
+      const statusByArea = {};
+      (data.corridor_reports || []).forEach(r => { statusByArea[r.area] = r.status; });
       const list  = $('area-list');
       list.innerHTML = '';
       areas.forEach(area => {
-        const li = el('li', 'area-item', AREA_ICON);
+        const li = el('li', 'area-item', areaDot(statusByArea[area]));
         li.append(area);
         li.style.borderLeftColor = cfg.color;
         list.appendChild(li);
